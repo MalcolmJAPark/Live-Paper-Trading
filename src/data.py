@@ -51,9 +51,9 @@ def get_balance_sheet(ticker, db_path='prices.db', table_name='balance_sheets'):
 
     # 3. Extract book value (Total Stockholder Equity)
     try:
-        book_value = bs.loc['Total Stockholder Equity', latest]
+        book_value = bs.loc['Stockholders Equity', latest]
     except KeyError:
-        raise KeyError("Could not find 'Total Stockholder Equity' in balance sheet")
+        raise KeyError("Could not find 'Stockholders Equity' in balance sheet")
 
     # 4. Get shares outstanding & price from Ticker.info
     info = tk.info
