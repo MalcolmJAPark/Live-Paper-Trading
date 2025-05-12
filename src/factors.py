@@ -29,9 +29,16 @@ def value_factor(df: pd.DataFrame) -> pd.Series:
 
 def momentum_factor(df: pd.DataFrame) -> pd.Series:
     """
-    Dummy Momentum factor: returns zeros for each entry in df.
+    Momentum factor: 252- to 21-day total return.
+    Skips stocks with fewer than 252 trading days (yields NaN).
     """
-    return pd.Series(0.0, index=df.index, name="momentum_factor")
+    # Use groupby.transform to align with the original DataFrame index, handling duplicates
+    mom = (
+        df["CurrentPrice"]
+        .groupby(level="Ticker")
+        .transform(lambda s: s.shift(21) / s.shift(252) - 1)
+    )
+    return pd.Series(mom, index=df.index, name="momentum_factor")
 
 
 def quality_factor(df: pd.DataFrame) -> pd.Series:
@@ -49,19 +56,19 @@ def low_vol_factor(df: pd.DataFrame) -> pd.Series:
 
 
 if __name__ == "__main__":
-    # Example usage: load balance_sheets from SQLite DB 'prices.db'
+    # Load balance_sheets from SQLite DB 'prices.db'
     conn = sqlite3.connect("prices.db")
     df = pd.read_sql(
         "SELECT * FROM balance_sheets", conn,
         parse_dates=["Date"]
     )
-    # Set MultiIndex (Date, Ticker)
     df.set_index(["Date", "Ticker"], inplace=True)
 
     # Compute factors
     df["size_factor"] = size_factor(df)
     df["value_factor"] = value_factor(df)
+    df["momentum_factor"] = momentum_factor(df)
 
     # Inspect first rows of daily factor DataFrame
-    print(df[["size_factor", "value_factor"]].head())
+    print(df[["size_factor", "value_factor", "momentum_factor"]].head())
     conn.close()
